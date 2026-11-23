@@ -1,0 +1,94 @@
+rules_version = '2';
+
+// ============================================================================
+// OLYMPIQUE DE BEJA — Firestore Security Rules (C6)
+//
+// Architecture note:
+// The application is 100% server-side for every data mutation and read that
+// matters. All Firestore access flows through the Firebase Admin SDK in the
+// Next.js API routes (/api/orders, /api/payment, /api/points, /api/trivia/award,
+// /api/webhooks/stripe, /api/chat). The Admin SDK bypasses these rules, so this
+// file governs ONLY direct client (browser) access to Firestore.
+//
+// The client currently performs NO legitimate direct Firestore reads or writes
+// (it only uses Firebase Auth for sign-in). All user-facing data is delivered
+// through authenticated server API endpoints.
+//
+// Therefore the rule set below is intentionally DENY-ALL for clients:
+//   - A malicious user who boots the web SDK with the public NEXT_PUBLIC_
+//     config cannot read or write ANY document, including other users' data,
+//     points, orders, payment fields, or trivia/chat usage records.
+//   - No client can forge, delete, or tamper with an order, an order's
+//     PaymentIntent id, payment status, or totals.
+//   - No client can read another user's profile, points balance, orders, or any
+//     trivia/chat usage history.
+//   - There is exactly ONE authoritative mutation path for users/{uid}.points:
+//     the server-side transactional functions in src/lib/admin/points.ts.
+//
+// If a future feature legitimately needs direct client access, it MUST be added
+// here as an explicit, minimal, per-rule grant and reviewed for the invariants
+// above. Never grant broad `match /{document=**}` write access.
+//
+// Deploy with:
+//   firebase deploy --only firestore:rules
+// ============================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // -------------------------------------------------------------------------
+    // GLOBAL DEFAULT: deny everything the client cannot prove it needs.
+    // -------------------------------------------------------------------------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // USERS COLLECTION — users/{uid}
+    //
+    // The user document is the authoritative source of the points balance and
+    // checkout idempotency records. Nothing here may ever be written directly
+    // by a client: points must only change via the server-side transactional
+    // business operations. Reads of a user's own profile are also denied because
+    // the client receives its balance through the authenticated /api/points
+    // endpoint (server-computed), so no direct Firestore exposure is required.
+    // -------------------------------------------------------------------------
+    match /users/{uid} {
+      allow read, write: if false;
+    }
+
+    // Trivia once-per-day records. Server-managed; no client access.
+    match /users/{uid}/triviaDaily/{day} {
+      allow read, write: if false;
+    }
+
+    // Chat usage counters. Server-managed; no client access.
+    match /users/{uid}/chatUsage/{day} {
+      allow read, write: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // ORDERS COLLECTION — orders/{orderId}
+    //
+    // Orders contain authoritative financial data (totals, PaymentIntent ids,
+    // payment status). The client must NEVER read or write these directly. All
+    // order lifecycle transitions are performed server-side and driven by
+    // verified Firebase identity (orders/route.ts) and the verified Stripe
+    // webhook (webhooks/stripe/route.ts). Denying direct access prevents a
+    // malicious user from marking an order paid, altering totals, re-binding a
+    // PaymentIntent, or reading another user's orders.
+    // -------------------------------------------------------------------------
+    match /orders/{orderId} {
+      allow read, write: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // HARD FAIL-CLOSED SAFETY NET
+    //
+    // Any collection introduced in the future that is not explicitly granted
+    // above is denied by the global deny-all rule. This guarantee is the
+    // security posture required by the audit: no client-side source of truth
+    // for points, payment status, order ownership, or rewards.
+    // -------------------------------------------------------------------------
+  }
+}

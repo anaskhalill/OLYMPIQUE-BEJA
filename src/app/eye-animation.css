@@ -1,0 +1,115 @@
+/* Eye Animation Styles for COMING SOON */
+/* Sizes use em so the eyes scale with the responsive heading font-size. */
+.eyes {
+    display: inline-flex;
+    gap: 0.15em;
+    vertical-align: middle;
+    margin: -0.045em 0.05em 0.05em;
+}
+
+.eye {
+    position: relative;
+    width: 0.55em;
+    height: 0.55em;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #fff, #dcdcdc);
+    box-shadow:
+        inset 0 0 0.06em rgba(0, 0, 0, 0.3),
+        0 0.025em 0.1em rgba(0, 0, 0, 0.6);
+    overflow: hidden;
+}
+
+.iris {
+    position: absolute;
+    width: 0.25em;
+    height: 0.25em;
+    border-radius: 50%;
+    background: radial-gradient(circle, #000000, #ff0000);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.1s ease-out;
+    z-index: 10;
+}
+
+.pupil {
+    width: 0.09em;
+    height: 0.09em;
+    background: black;
+    border-radius: 50%;
+    position: relative;
+    z-index: 11;
+}
+
+.shine {
+    position: absolute;
+    width: 0.05em;
+    height: 0.05em;
+    background: white;
+    border-radius: 50%;
+    top: 0.04em;
+    left: 0.05em;
+}
+
+/* Eyelid for blinking */
+.eyelid-top {
+    position: absolute;
+    top: 0;
+    width: 0.55em;
+    height: 0.25em;
+    background: #3c2e28;
+    border-bottom-left: 100%;
+    border-bottom-right: 100%;
+    transform-origin: top;
+    z-index: 20;
+}
+
+.eyelid-bottom {
+    position: absolute;
+    bottom: 0;
+    width: 0.55em;
+    height: 0.25em;
+    background: #3c2e28;
+    border-top-left: 100%;
+    border-top-right: 100%;
+    transform-origin: bottom;
+    z-index: 20;
+}
+
+/* Blink animation */
+@keyframes blinkTop {
+
+    0%,
+    92%,
+    100% {
+        transform: translateY(-100%);
+    }
+
+    95% {
+        transform: translateY(0);
+    }
+}
+
+@keyframes blinkBottom {
+
+    0%,
+    92%,
+    100% {
+        transform: translateY(100%);
+    }
+
+    95% {
+        transform: translateY(0);
+    }
+}
+
+.eyelid-top {
+    animation: blinkTop 4s infinite;
+}
+
+.eyelid-bottom {
+    animation: blinkBottom 4s infinite;
+}
